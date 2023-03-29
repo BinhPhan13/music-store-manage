@@ -18,8 +18,12 @@ class EntityManager:
 		return self._mng_type
 	
 	def _create_id(self):
-		self._counter += 1
-		return f'self._mng_type{self._counter:03}'
+		if self._queue:
+			i = self._queue.pop()
+		else:
+			i = self._counter
+			self._counter += 1
+		return f'{self._mng_type}{i:06}'
 
 	def _get_info(self):
 		name = input(f"- Name of the {self.mng_type}: ")
@@ -113,11 +117,21 @@ class SingerManager(EntityManager):
 	def __init__(self):
 		super().__init__()
 		self._mng_type = 'singer'
+	
+	def search(self, name):
+		pattern_singer = Singer(None, name)
+		result = [singer for singer in self._data.values() if singer == pattern_singer]
+		return result
 
 class CategoryManager(EntityManager):
 	def __init__(self):
 		super().__init__()
 		self._mng_type = 'category'
+
+	def search(self, name):
+		pattern_category = Category(None, name)
+		result = [category for category in self._data.values() if category == pattern_category]
+		return result
 
 class SongManager(EntityManager):
 	def __init__(self, singer_manager:SingerManager, category_manager:CategoryManager):
@@ -141,29 +155,16 @@ class SongManager(EntityManager):
 		print(self._temp_info)
 		
 	
-	def search(self):
-		self._get_info()
-		name, singer_name, category_name, price = self._temp_info
-		# if full attributes -> convert to id
-		if name and singer_name and category_name and price:
-			hash_singer = hash_name(singer_name)
-			hash_category = hash_name(category_name)
-			s = hash_name(name) + hash_singer + hash_category + str(price)
-			result = [self.find(s)]
-		else:
-			temp_singer, temp_category = Singer(None, ''), Category(None, '')
-			if singer_name:
-				temp_singer = Singer(None, singer_name)
-			if category_name:
-				temp_category = Category(None, category_name)
-			
-			pattern_song = Song(None, name, temp_singer, temp_category, price, None)
-			result = [song for song in self._data.values() if song == pattern_song]
-
-		if not result:
-			print("No result!")
-		else: 
-			self.show(result)
+	def search(self, name, singer_name, category_name, price):
+		temp_singer, temp_category = Singer(None, ''), Category(None, '')
+		if singer_name:
+			temp_singer = Singer(None, singer_name)
+		if category_name:
+			temp_category = Category(None, category_name)
+		
+		pattern_song = Song(None, name, temp_singer, temp_category, price, None)
+		result = [song for song in self._data.values() if song == pattern_song]
+		return result
 		
 
 	def add(self):
@@ -178,40 +179,92 @@ class SongManager(EntityManager):
 		#	check if new category, new singer
 		# 	auto add new category, singer
 		#	add song
-		hash_singer = hash_name(singer_name)
-		hash_category = hash_name(category_name)
-		s = hash_name(name) + hash_singer + hash_category + str(price)
-		if self.find(s):
-			self._data[s].no += n
+		result = self.search(name, singer_name, category_name, price)
+		if result:
+			self._data[result[0].id].no += n
 			return 1
 		
-		singer = self.__singer_ref.find(hash_singer)
+		singer = self.__singer_ref.search(singer_name)
+
 		# if new singer -> create singer -> SingerManager add
 		if not singer:
+			hash_singer = self.__singer_ref._create_id()
 			singer = Singer(hash_singer, singer_name)
 			# auto-add
 			self.__singer_ref._data[hash_singer] = singer
 		else:
-			singer.no += 1
+			singer[0].no += 1
 		
-
-		category = self.__category_ref.find(hash_category)
-		# if new category -> create category -> CategoryManager add
-		if not self.__category_ref.find(hash_category):
-			category = Category(hash_category, category_name)
+		category = self.__category_ref.search(category_name)
+		if not category:
+			hash_category = self.__category_ref._create_id()
+			category = Singer(hash_category, category_name)
 			# auto-add
 			self.__category_ref._data[hash_category] = category
-		
 		else:
-			category.no += 1
+			category[0].no += 1
 
-
+		s = self._create_id()
 		new_song = Song(s, name, singer, category, price, n)
 		self._data[s] = new_song
 	
 		return 1
 	
-	# def update(self, id):
+	def update(self, i):
+		super().update(i)
+		updated_song = self._data[self._temp_id]
+		new_name, new_singer_name, new_category_name, new_price = self._temp_info
+		singer_change, category_change = True, True
+		if not new_name:
+			new_name = updated_song.name
+		if not new_singer_name:
+			new_singer_name = updated_song.singer.name
+			singer_change = False
+		if not new_category_name:
+			new_category_name = updated_song.category.name
+			category_change = False
+		if not new_price:
+			new_price = updated_song.price
+		result = self.search(new_name, new_singer_name, new_category_name, new_price)
+		if result:
+			print('This song already exists')
+			result[0].no += updated_song.no
+			self.delete(i)
+			return 1
+		
+		singer = self.__singer_ref.search(new_singer_name)
+		if not singer:
+			hash_singer = self.__singer_ref._create_id()
+			singer = Singer(hash_singer, new_singer_name)
+			# auto-add
+			self.__singer_ref._data[hash_singer] = singer
+			updated_song.singer.no -= 1
+		elif singer_change:
+			singer = singer[0]
+			singer.no += 1
+			updated_song.singer.no -= 1
+
+
+		category = self.__category_ref.search(new_category_name)
+		if not category:
+			hash_category = self.__category_ref._create_id()
+			category = Category(hash_category, new_category_name)
+			# auto-add
+			self.__category_ref._data[hash_category] = category
+			updated_song.category.no -= 1
+
+		elif category_change:
+			category = category[0]
+			category.no += 1
+			updated_song.category.no -= 1
+
+
+		updated_song.name = new_name
+		updated_song.singer = singer
+		updated_song.category = category
+		updated_song.price = new_price
+		
+
 
 	def delete(self, id):
 		category = self._data[id].category
@@ -222,30 +275,33 @@ class SongManager(EntityManager):
 			self.__category_ref.delete(category.id)
 		if singer.no == 0:
 			self.__singer_ref.delete(singer.id)
+		self._queue.append(id)
 		super().delete(id)
 
 
 if __name__ == "__main__":
-	# sgmng = SingerManager()
-	# ctmng = CategoryManager()
-	# smng = SongManager(sgmng, ctmng)
-	# for i in range(4):
-	# 	smng.add()
-	
-	# sgmng.show_all()
-	# ctmng.show_all()
-	# smng.show_all()
-
-	# smng.search()
-	# smng.delete('kgyeutskgjkrkhgrrgj2.12')
-	# sgmng.show_all()
-	# ctmng.show_all()
-	# smng.show_all()
-	umng = UserManager()
+	sgmng = SingerManager()
+	ctmng = CategoryManager()
+	smng = SongManager(sgmng, ctmng)
 	for i in range(3):
-		umng.add()
+		smng.add()
+	
+	sgmng.show_all()
+	ctmng.show_all()
+	smng.show_all()
+	smng.update('song000001')
+	sgmng.show_all()
+	ctmng.show_all()
+	smng.show_all()
+	smng.delete('song000001')
+	sgmng.show_all()
+	ctmng.show_all()
+	smng.show_all()
+	# umng = UserManager()
+	# for i in range(3):
+	# 	umng.add()
 
-	umng.show(umng._data.values())
-	umng.update('u46017')
-	umng.show(umng._data.values())
-	umng.show(umng._data.values())
+	# umng.show(umng._data.values())
+	# umng.update('user000001')
+	# umng.show(umng._data.values())
+	# umng.show(umng._data.values())
