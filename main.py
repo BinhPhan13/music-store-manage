@@ -1,7 +1,10 @@
 import re
+from collections import defaultdict
+import numpy as np
+
 # Entity and subclasses
 class Entity:
-	'''Prototype for things which have a single id'''
+	# Prototype for things which have a single id
 	def __init__(self, i, name):
 		self._id = i
 		self._name = name
@@ -16,6 +19,10 @@ class Entity:
 	@property
 	def name(self):
 		return self._name
+	
+	@name.setter
+	def name(self, name):
+		self._name = name
 
 class Admin(Entity):
 	def	__init__(self, id, name, pw):
@@ -47,7 +54,7 @@ class User(Entity):
 	
 	@email.setter
 	def email(self, email):
-		regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+		regex = '[a-zA-Z0-9]+@[a-zA-Z]+\.(com|edu|net)'
 		if not re.match(regex, email):
 			print('Invalid email!')
 
@@ -63,23 +70,46 @@ class User(Entity):
 		if year < 0 or year > 2024 : print('Invalid year')
 		else: self.__year = year
 
-class Category(Entity):
-	pass
 
-class Singer(Entity):
-	def __init__(self, id, name, gender = None):
+class Song(Entity):
+	def __init__(self, id, name, category, singer, price, stock):
 		super().__init__(id, name)
-		self.__gender = gender
+		self.__category = category
+		self.__singer = singer
+		self.__price = price
+		self.__stock = stock
 
 	@property
-	def gender(self):
-		return self.__gender
+	def category(self):
+		return self.__category
 	
-	@gender.setter
-	def gender(self, gender):
-		self.__gender = gender
+	@property
+	def singer(self):
+		return self.__singer
+	
+	@property
+	def price(self):
+		return self.__price
+	
+	@price.setter
+	def price(self, price):
+		if price >= 0:
+			self.__price = price
+		else:
+			print('Invalid price')	
 
+	@property
+	def stock(self):
+		return self.__stock
+	
+	@stock.setter
+	def stock(self, stock):
+		if stock >= 0:
+			self.__stock = stock
+		else:
+			print('Invalid number of stocks')
 
+	
 # EntityManager and subclasses
 class EntityManager:
 	'''Prototype for manager of entities'''
@@ -174,74 +204,140 @@ class UserManager(EntityManager):
 				else: break
 		else: print('The user does not exist')
 
+
+
+class SongManager(EntityManager):
+	def __init__(self):
+		super().__init__()
+		self._mng_type = 'song'
+
+	def update(self):
+		song = self.find(input('Enter the song ID you want to update: '))
+		if song:
+			while True:
+				req = input('You want to update: ')
+				if req == 'price':
+					song.price = input('Enter gender: ')
+				elif req == 'stock':
+					song.stock = input('Enter email: ')
+				else: break
+		else: print('The song does not exist')
+
+	def add(self):
+		info = self.get_info()
+		if info is None: return
+
+		song_id, song_name = info
+		self._data[song_id] = Song(song_id, song_name,
+			     					input('- Song category: '),
+								    input('- Song singer: '),
+			     					float(input('- Song price: ')),
+									int(input('- Song stocks: ')))
+
 	def delete(self):
-		id = input('Enter the user ID you want to delete: ')
-		user = self.find(id)
-		if user:
+		id = input('Enter the song ID you want to delete: ')
+		song = self.find(id)
+		if song:
 			del self._data[id]
 		else: 
 			print('The user does not exist')
+		
+# Connector and subclasses
+class Connector:
+	def __init__(self, e1:Entity, e2:Entity):
+		self.e1 = e1
+		self.e2 = e2
+		self.data = None
 
-class CategoryManager(EntityManager):
-	def __init__(self):
-		super().__init__()
-		self._mng_type = 'category'
+class Purchase(Connector):
+	def __init__(self, user: User, song: Song):
+		super().__init__(user, song)
+	
+	def __str__(self) -> str:
+		return f"User {self.e2.name}" + \
+			f" have bought {self.e1.name} for {(self.data)} disks."
+	
+class ConnectorManager:
+	def __init__(self, e_mng1:EntityManager, e_mng2:EntityManager):
+		# reference managers
+		self.ref1 = e_mng1
+		self.ref2 = e_mng2
+
+		self.data : list[Connector] = []
+
+	def get_info(self):
+		i1 = input(f"- ID of the {self.ref1.mng_type}: ")
+		e1 = self.ref1.find(i1)
+		if not e1:
+			print(f"That {self.ref1.mng_type} not exists!")
+			return None
+
+		i2 = input(f"- ID of the {self.ref2.mng_type}: ")
+		e2 = self.ref2.find(i2)
+		if not e2:
+			print(f"That {self.ref2.mng_type} not exists!")
+			return None
+
+		return e1, e2
+
+	def find(self, e1_id, e2_id):
+		result = None
+		for connector in self.data:
+			if connector.e1.id == e1_id and \
+				connector.e2.id == e2_id:
+
+				result = connector
+				break
+		return result
+	
+	def show(self):
+		print(f'There are in total {len(self.data)} purchases')
+		for purchase in self.data:
+			print(f'- {purchase}')
 
 	def add(self):
-		info = self.get_info()
-		if info is None: return
+		pass
 
-		category_id, category_name = info
-		category = Category(category_id, category_name)
-		self._data[category_id] = category
-
-	def delete(self):
-		id = input('Enter the category ID you want to delete: ')
-		category = self.find(id)
-		if category:
-			del self._data[id]
-		else: 
-			print('The category does not exist')
-
-class SingerManager(EntityManager):
-	def __init__(self):
-		super().__init__()
-		self._mng_type = 'singer'
+class PurchaseManager(ConnectorManager):
 	def add(self):
 		info = self.get_info()
-		if info is None: return
+		if not info: return
 
-		singer_id, singer_name = info
-		singer = Singer(singer_id, singer_name)
-		self._data[singer_id] = singer
+		user, song = info
+		new_purchase = Purchase(user, song)
+		new_purchase.data = int(input('- Number of disks: '))
+		song.stock -= new_purchase.data
+		if(song.stock < 0):
+			print('Invalid purchase')
+		else:
+			self.data.append(new_purchase)
+			return new_purchase
+	
+	def bills(self):
+		new_purchase = self.add()
+		price = new_purchase.e2.price * new_purchase.data
+		print(f'The total price is: {price}')
 
-	def update(self):
-		singer = self.find(input('Enter the singer ID you want to update: '))
-		if singer:
-			singer.gender = input('Enter the gender')
-		else: 
-			print('The singer does not exist')
-
-	def delete(self):
-		id = input('Enter the singer ID you want to delete: ')
-		singer = self.find(id)
-		if singer:
-			del self._data[id]
-		else: 
-			print('The singer does not exist')
-
+	def report_user(self, user_id):
+		#total money from 1 user
+		user_purchase = defaultdict(list)
+		for purchase in self.data:
+			user_purchase[purchase.e1.id].append(purchase)
+		user_id = input('Enter the user ID you want to check: ')
+		if user_id in user_purchase.keys():
+			return sum(list(map(lambda purchase: purchase.e2.price*purchase.data, user_purchase[user_id])))
 
 if __name__ == '__main__':
-	# admin = AdminManager()
-	# admin.add()
-	# admin.add()
-	# admin.login()
+	user_manager = UserManager()
+	user_manager.add()
+	user_manager.add()
 
-	user = UserManager()
-	user.add()
-	user.add()
-	user.show()
-	user.update()
-	user.show()
-	user.delete()
-	user.show()
+	song_manager = SongManager()
+	song_manager.add()
+	song_manager.add()
+
+	purchase_manager = PurchaseManager(user_manager, song_manager)
+	purchase_manager.add()
+	purchase_manager.show()
+	purchase_manager.bills()
+	print(purchase_manager.report_user(3))
