@@ -5,7 +5,7 @@ class Entity:
 		self._name = name
 	
 	def __str__(self) -> str:
-		return f"{self._name:15}"
+		return f"{self.id:15}{self.name:15}"
 	
 	@property
 	def id(self):
@@ -62,70 +62,38 @@ class User(Entity):
 	def year(self, year):
 		self.__year = year
 
-class Category(Entity):
-	def __init__(self, i, name):
-		super().__init__(i, name)
-		self.__no = 1
-		
-	def __eq__(self, other:'Category'):
-		return self.name == other.name or not other.name
-	
-	@property
-	def no(self):
-		return self.__no
-	
-	@no.setter
-	def no(self, no):
-		self.__no = no
-
-class Singer(Entity):
-	def __init__(self, i, name):
-		super().__init__(i, name)
-		self.__no = 1
-
-	def __eq__(self, other:'Singer'):
-		return self.name == other.name or not other.name
-	
-	@property
-	def no(self):
-		return self.__no
-	
-	@no.setter
-	def no(self, no):
-		self.__no = no
-
 class Song(Entity):
-	def __init__(self, i, name, singer:Singer, category:Category, price:float, no:int):
+	def __init__(self, i, name, singer_name, category, price:float, no:int):
 		super().__init__(i, name)
-		self.__singer = singer
+		self.__singer_name = singer_name
 		self.__category = category
 		self.__price = price
 		self.__no = no
 	
 	def __str__(self) -> str:
-		extra_info = f"{self.__singer.name:15}{str(self.__category.name):10}{self.__price:5}{self.__no:5}"
+		extra_info = f"{self.__singer_name:15}{self.__category:10}{self.__price:5}{self.__no:5}"
 		return super().__str__() + extra_info
 
 	def __eq__(self, other: 'Song') -> bool:
 		match_name = self.name == other.name or not other.name
-		match_singer = self.singer == other.singer 
+		match_singer = self.singer_name == other.singer_name 
 		match_category = self.category == other.category
 		match_price = self.price == other.price or not other.price
 
 		return match_name and match_singer and match_category and match_price
 
 	@property
-	def singer(self):
-		return self.__singer	
-	@singer.setter
-	def singer(self, singer:Singer):
-		self.__singer = singer
+	def singer_name(self):
+		return self.__singer_name	
+	@singer_name.setter
+	def singer_name(self, singer_name):
+		self.__singer_name = singer_name
 	
 	@property
 	def category(self):
 		return self.__category
 	@category.setter
-	def category(self, category: Category):
+	def category(self, category):
 		self.__category = category
 	
 	@property
