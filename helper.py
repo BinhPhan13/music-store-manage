@@ -17,7 +17,7 @@ def hash_name(s: str) -> str:
 
 
 def verify_phone(s: str):
-    pattern = r'^09[0-9]{8}$'
+    pattern = r'^(03|05|07|08|09)[0-9]{8}$'
     if re.match(pattern, s): return True
     else: return False
 
@@ -26,5 +26,4 @@ def verify_year(s: str):
     else: return False
 
 if __name__ == "__main__":
-    print(hash_phone('012123231237128371239'))
-    print(hash_name('phan thanh binh'))
+    print(verify_phone('03684967875'))

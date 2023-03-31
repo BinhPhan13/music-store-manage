@@ -1,6 +1,5 @@
 from entity import *
 from helper import *
-import random
 
 '''TODO: ADD INFO VERIFICATION'''
 
@@ -9,12 +8,18 @@ class EntityManager:
 	def __init__(self):		
 		self._mng_type = 'entity'
 		self._data = {}
+		self._queue = []
+		self._counter = 0 #for id
 		self._temp_info = None
 		self._temp_id = None 
 
 	@property
 	def mng_type(self):
 		return self._mng_type
+	
+	def _create_id(self):
+		self._counter += 1
+		return f'self._mng_type{self._counter:03}'
 
 	def _get_info(self):
 		name = input(f"- Name of the {self.mng_type}: ")
@@ -62,34 +67,26 @@ class UserManager(EntityManager):
 		gender = input(f"- Gender of the {self.mng_type}: ")
 		year = input(f"- Year of the {self.mng_type}: ")
 		phone = input(f"- Phone of the {self.mng_type}: ")
-		if not(verify_phone(phone) or verify_year(year)): return
-
+			# if not verify_phone(phone): return
+		# if not verify_year(year): return
 		self._temp_info = (*self._temp_info, gender, year, phone)
 
 	# use this if no id is provided
-	def search(self):
-		self._get_info()
-		name, gender, year, phone = self._temp_info
+	def search(self, name, gender, year, phone):
 		
-		if phone: result = [self.find('u' + hash_phone(phone))]
-		else:
-			pattern_user = User(None, name, gender, year, None)
-			result = [user for user in self._data.values() if user == pattern_user]
+		pattern_user = User(None, name, gender, year, phone)
+		result = [user for user in self._data.values() if user == pattern_user]
 
-		if not result:
-			print("No result!")
-		else:		
-			self.show(result)
-
+		return result
+	
 	def add(self):
 		if not super().add(): return
 		name, gender, year, phone = self._temp_info
-		s = 'u' + hash_phone(phone)
-		if self.find(s):
-			print(s)
-			print("User exists!")
-			return 
-		
+		result = self.search(None, None, None, phone)
+		if result:
+			print('User exists!')
+			return
+		s = self._create_id()
 		new_user = User(s, name, gender, year, phone)
 		self._data[s] = new_user
 		return 1
@@ -97,7 +94,14 @@ class UserManager(EntityManager):
 	def update(self, id):
 		super().update(id)
 		updated_user = self._data[self._temp_id]
-		new_name, new_gender, new_year, _ = self._temp_info
+		new_name, new_gender, new_year, new_phone = self._temp_info
+		if new_phone:
+			result = self.search(None, None, None, new_phone)
+			if result:
+				print('Phone exists!')
+			else:
+				updated_user.phone = new_phone
+				
 		if new_name:
 			updated_user.name = new_name
 		if new_gender:
@@ -206,6 +210,8 @@ class SongManager(EntityManager):
 		self._data[s] = new_song
 	
 		return 1
+	
+	# def update(self, id):
 
 	def delete(self, id):
 		category = self._data[id].category
@@ -220,27 +226,26 @@ class SongManager(EntityManager):
 
 
 if __name__ == "__main__":
-	sgmng = SingerManager()
-	ctmng = CategoryManager()
-	smng = SongManager(sgmng, ctmng)
-	for i in range(4):
-		smng.add()
+	# sgmng = SingerManager()
+	# ctmng = CategoryManager()
+	# smng = SongManager(sgmng, ctmng)
+	# for i in range(4):
+	# 	smng.add()
 	
-	sgmng.show_all()
-	ctmng.show_all()
-	smng.show_all()
+	# sgmng.show_all()
+	# ctmng.show_all()
+	# smng.show_all()
 
-	smng.search()
-	smng.delete('kgyeutskgjkrkhgrrgj2.12')
-	sgmng.show_all()
-	ctmng.show_all()
-	smng.show_all()
-	# umng = UserManager()
-	# for i in range(5):
-	# 	umng.add()
+	# smng.search()
+	# smng.delete('kgyeutskgjkrkhgrrgj2.12')
+	# sgmng.show_all()
+	# ctmng.show_all()
+	# smng.show_all()
+	umng = UserManager()
+	for i in range(3):
+		umng.add()
 
-	# umng.show(umng._data.values())
-	# umng.update('u46017')
-	# umng.show(umng._data.values())
-	# umng.delete('u46017')
-	# umng.show(umng._data.values())
+	umng.show(umng._data.values())
+	umng.update('u46017')
+	umng.show(umng._data.values())
+	umng.show(umng._data.values())
