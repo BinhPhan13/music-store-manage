@@ -63,12 +63,36 @@ class User(Entity):
 		self.__year = year
 
 class Category(Entity):
+	def __init__(self, i, name):
+		super().__init__(i, name)
+		self.__no = 1
+		
 	def __eq__(self, other:'Category'):
 		return self.name == other.name or not other.name
+	
+	@property
+	def no(self):
+		return self.__no
+	
+	@no.setter
+	def no(self, no):
+		self.__no = no
 
 class Singer(Entity):
+	def __init__(self, i, name):
+		super().__init__(i, name)
+		self.__no = 1
+
 	def __eq__(self, other:'Singer'):
 		return self.name == other.name or not other.name
+	
+	@property
+	def no(self):
+		return self.__no
+	
+	@no.setter
+	def no(self, no):
+		self.__no = no
 
 class Song(Entity):
 	def __init__(self, i, name, singer:Singer, category:Category, price:float, no:int):

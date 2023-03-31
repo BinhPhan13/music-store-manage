@@ -1,5 +1,6 @@
 from entity import *
-from helper import hash_phone, hash_name
+from helper import *
+import random
 
 '''TODO: ADD INFO VERIFICATION'''
 
@@ -28,6 +29,7 @@ class EntityManager:
 
 	def show_all(self):
 		self.show(self._data.values())
+
 	def search(self):
 		pass
 
@@ -60,6 +62,7 @@ class UserManager(EntityManager):
 		gender = input(f"- Gender of the {self.mng_type}: ")
 		year = input(f"- Year of the {self.mng_type}: ")
 		phone = input(f"- Phone of the {self.mng_type}: ")
+		if not(verify_phone(phone) or verify_year(year)): return
 
 		self._temp_info = (*self._temp_info, gender, year, phone)
 
@@ -184,6 +187,8 @@ class SongManager(EntityManager):
 			singer = Singer(hash_singer, singer_name)
 			# auto-add
 			self.__singer_ref._data[hash_singer] = singer
+		else:
+			singer.no += 1
 		
 
 		category = self.__category_ref.find(hash_category)
@@ -192,6 +197,9 @@ class SongManager(EntityManager):
 			category = Category(hash_category, category_name)
 			# auto-add
 			self.__category_ref._data[hash_category] = category
+		
+		else:
+			category.no += 1
 
 
 		new_song = Song(s, name, singer, category, price, n)
@@ -199,6 +207,16 @@ class SongManager(EntityManager):
 	
 		return 1
 
+	def delete(self, id):
+		category = self._data[id].category
+		category.no -= 1
+		singer = self._data[id].singer
+		singer.no -= 1
+		if category.no == 0:
+			self.__category_ref.delete(category.id)
+		if singer.no == 0:
+			self.__singer_ref.delete(singer.id)
+		super().delete(id)
 
 
 if __name__ == "__main__":
@@ -213,6 +231,10 @@ if __name__ == "__main__":
 	smng.show_all()
 
 	smng.search()
+	smng.delete('kgyeutskgjkrkhgrrgj2.12')
+	sgmng.show_all()
+	ctmng.show_all()
+	smng.show_all()
 	# umng = UserManager()
 	# for i in range(5):
 	# 	umng.add()
