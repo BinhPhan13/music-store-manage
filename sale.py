@@ -42,7 +42,8 @@ class SaleManager:
 	def add(self, user_id, song_id, buy_time):
 		result = self.search(user_id, song_id)
 		if result: 
-			result[0].times.append(buy_time)
+			price = self.__song_ref.find(song_id).price
+			result[0].times.append((buy_time, price))
 			return 1
 		
 		new_sale = Sale(user_id, song_id)
@@ -71,12 +72,9 @@ class SaleManager:
 		for sale in self.__data:
 			user_sale[sale.user_id].append(sale)
 		user_sale_1 = {}
-		# print(user_sale)
-		# print(len(user_sale))
-		print('Now loop')
+
 		for user_id, sales in user_sale.items():
 			user_sale_1[user_id] = sum(list(map(lambda sale: sum(list(map(lambda sa: sa[1], sale.times))), sales)))
-			# print(sales[0].times)
 		return user_sale_1
 
 if __name__ == "__main__":
@@ -88,8 +86,11 @@ if __name__ == "__main__":
 		song_mng.add()
 	song_mng.show_all()
 	user_mng.add()
-	for song_id in song_mng._data.keys():
-		sale_mng.add(list(user_mng._data.keys())[0], song_id, f't{song_id}')
+	user_mng.add()
+	sale_mng.add('user000000', 'song000000', '1')
+	sale_mng.add('user000001', 'song000002', '1')
+	sale_mng.add('user000000', 'song000000', '2')
+
 	
 	sale_mng.show_all()
 	song_mng.update('song000000')
