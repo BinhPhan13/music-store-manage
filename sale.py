@@ -1,32 +1,36 @@
 from entity_manager import *
-from collections import defaultdict
+from entity import *
+from datetime import datetime
+
 class Sale:
-	def __init__(self, user_id, song_id):
-		self.__user_id = user_id
-		self.__song_id = song_id
-		self.__times = []
+	def __init__(self, user_id:User, song_id:Song, time, price):
+		self.__user = user_id
+		self.__song = song_id
+		self.__time = time
+		self.__price = price
 
 	def __str__(self) -> str:
-		return f"{self.user_id:15}{self.song_id:15}{str(self.times):10}"
+		return f"{self.user_id:15}{self.song_id:15}{self.time:10}{self.__price:10}"
+
 	def __eq__(self, other: 'Sale'):
 		match_user = self.user_id == other.user_id or not other.user_id
 		match_song = self.song_id == other.song_id or not other.song_id
-		return match_user and match_song
+		match_time = self.time == other.time or not other.time
+		match_price = self.price == other.price or not other.price
+		return match_user and match_song and match_time and match_price
+	
 	@property
 	def user_id(self):
-		return self.__user_id
-	@user_id.setter
-	def user_id(self, i):
-		self.__user_id = i	
+		return self.__user
 	@property
 	def song_id(self):
-		return self.__song_id
-	@song_id.setter
-	def song_id(self, i):
-		self.__song_id = i
+		return self.__song
 	@property
-	def times(self):
-		return self.__times
+	def time(self):
+		return self.__time
+	@property
+	def price(self):
+		return self.__price
 
 
 class SaleManager:
@@ -35,29 +39,36 @@ class SaleManager:
 		self.__song_ref = song_manager
 		self.__data = []
 
-	def search(self, user_id, song_id):
-		pattern_sale = Sale(user_id, song_id)
+	@property
+	def user_ref(self):
+		return self.__user_ref
+	@property
+	def song_ref(self):
+		return self.__song_ref
+	def search(self, user_id, song_id, time, price):
+		pattern_sale = Sale(user_id, song_id, time, price)
 		return [sale for sale in self.__data if sale == pattern_sale]
 	
-	def add(self, user_id, song_id, buy_time):
-		result = self.search(user_id, song_id)
-		if result: 
-			price = self.__song_ref.find(song_id).price
-			result[0].times.append((buy_time, price))
-			return 1
+	def add(self, user_id, song_id):
+		if not (user_id or song_id): 
+			print("Must include both user and song!")
+			return
+		user = self.__user_ref.find(user_id)
+		song_stock = self.__song_ref.find(song_id)
+		if not user:
+			print("User not exist!")
+			return
+		if not song_stock:
+			print("Song not exist!")
+			return
+		if not song_stock.n:
+			print(f"Out of stock for {song_stock.song.id}!")
+			return
 		
-		new_sale = Sale(user_id, song_id)
-		price = self.__song_ref.find(song_id).price
-		new_sale.times.append((buy_time, price))
+		new_sale = Sale(user_id, song_id, datetime.now().strftime("%c"), song_stock.song.price)
+		song_stock.n -= 1
 		self.__data.append(new_sale)
 		return 1
-	
-	def refresh(self):
-		for data in self.__data:
-			if data.user_id not in self.__user_ref._data.keys():
-				data.user_id = ''
-			if data.song_id not in self.__song_ref._data.keys():
-				data.song_id = ''
 	
 	def show(self, L:list[Sale]):
 		print(f"There are {len(L)} sales:")
@@ -67,15 +78,15 @@ class SaleManager:
 		self.show(self.__data)
 
 	# calculate total spend from users
-	def user_money(self):
-		user_sale = defaultdict(list)
-		for sale in self.__data:
-			user_sale[sale.user_id].append(sale)
-		user_sale_1 = {}
+	# def user_money(self):
+	# 	user_sale = defaultdict(list)
+	# 	for sale in self.__data:
+	# 		user_sale[sale.user_id].append(sale)
+	# 	user_sale_1 = {}
 
-		for user_id, sales in user_sale.items():
-			user_sale_1[user_id] = sum(list(map(lambda sale: sum(list(map(lambda sa: sa[1], sale.times))), sales)))
-		return user_sale_1
+	# 	for user_id, sales in user_sale.items():
+	# 		user_sale_1[user_id] = sum(list(map(lambda sale: sum(list(map(lambda sa: sa[1], sale.times))), sales)))
+	# 	return user_sale_1
 
 if __name__ == "__main__":
 	user_mng = UserManager()
@@ -86,17 +97,14 @@ if __name__ == "__main__":
 		song_mng.add()
 	song_mng.show_all()
 	user_mng.add()
-	user_mng.add()
-	sale_mng.add('user000000', 'song000000', '1')
-	sale_mng.add('user000001', 'song000002', '1')
-	sale_mng.add('user000000', 'song000000', '2')
+	user_mng.show_all()
+	sale_mng.add('user0', 'song0')
+	sale_mng.add('user0', 'song4')
+	sale_mng.add('user0', 'song1')
+	sale_mng.add('user0', 'song0')
 
 	
 	sale_mng.show_all()
-	song_mng.update('song000000')
-	print(song_mng._queue)
-	song_mng.show_all() 
-	sale_mng.show_all()
-	sale_mng.refresh()
-	sale_mng.show_all()
-	print(sale_mng.user_money())
+	song_mng.show_all()
+	sale_mng.show(sale_mng.search('', 'song0', '', ''))
+	

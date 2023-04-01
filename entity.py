@@ -63,15 +63,14 @@ class User(Entity):
 		self.__year = year
 
 class Song(Entity):
-	def __init__(self, i, name, singer_name, category, price:float, no:int):
+	def __init__(self, i, name, singer_name, category, price:float):
 		super().__init__(i, name)
 		self.__singer_name = singer_name
 		self.__category = category
 		self.__price = price
-		self.__no = no
 	
 	def __str__(self) -> str:
-		extra_info = f"{self.__singer_name:15}{self.__category:10}{self.__price:5}{self.__no:5}"
+		extra_info = f"{self.__singer_name:15}{self.__category:10}{self.__price:5}"
 		return super().__str__() + extra_info
 
 	def __eq__(self, other: 'Song') -> bool:
@@ -102,13 +101,21 @@ class Song(Entity):
 	@price.setter
 	def price(self, price:float):
 		self.__price = price
-	
-	@property
-	def no(self):
-		return self.__no
-	@no.setter
-	def no(self, no):
-		self.__no = no
 
+class SongStock:
+	'''Wrapper class for song'''
+	def __init__(self, song:Song, n:int):
+		self.__song = song
+		self.__n = n
+	@property
+	def song(self):
+		return self.__song
+	@property
+	def n(self):
+		return self.__n
+	@n.setter
+	def n(self, n):
+		self.__n = n
+	
 if __name__ == '__main__':
 	pass

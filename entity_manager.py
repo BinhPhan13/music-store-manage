@@ -1,30 +1,24 @@
 from entity import *
 from helper import *
 
-'''TODO: ADD INFO VERIFICATION'''
-
 class EntityManager:
 	'''Prototype for manager of entities'''
 	def __init__(self):		
 		self._mng_type = 'entity'
 		self._data = {}
-		self._queue = []
-		self._counter = 0 #for id
-		self._temp_info = None
-		self._temp_id = None 
+		self._counter = 0 # to generate ids
+		self._temp_info = None # store result of _get_info()
+		self._temp_id = None  # store selection of update()
 
 	@property
 	def mng_type(self):
 		return self._mng_type
 	
 	def _create_id(self):
-		if self._queue: 
-			i = self._queue.pop()
-		else: 
-			i = self._counter
-			self._counter += 1
-		
-		return f'{self._mng_type}{i:06}'
+		'''Auto create id'''
+		i = f"{self._mng_type}{self._counter}"
+		self._counter += 1		
+		return i
 
 	def _get_info(self):
 		name = input(f"- Name of the {self.mng_type}: ").strip()
@@ -59,13 +53,12 @@ class EntityManager:
 		return 1
 		
 	def update(self, i):
-		if not self._get_info(): return
 		self._temp_id = i
+		if not self._get_info(): return
 		return 1
 	
 	def delete(self, i):
-		del self._data[i]
-		self._queue.append((int(i[-6:]), None))
+		del self._data[i]	
 		return 1
 
 class UserManager(EntityManager):
@@ -119,8 +112,8 @@ class UserManager(EntityManager):
 			result = self.search(None, None, None, new_phone)
 			if result:
 				print('Phone exists!')
-			else:
-				updated_user.phone = new_phone
+				return
+			updated_user.phone = new_phone
 		
 		if new_name:
 			updated_user.name = new_name
@@ -129,6 +122,7 @@ class UserManager(EntityManager):
 		if new_year:
 			updated_user.year = new_year
 		return 1
+
 
 class SongManager(EntityManager):
 	def __init__(self):
@@ -144,21 +138,21 @@ class SongManager(EntityManager):
 
 		category = input(f"- Category of the {self.mng_type}: ").strip()
 		if not verify_name(category):
-			print("Invalid category name!")
+			print("Invalid category!")
 			return
 		
 		price = input(f"- Price of the {self.mng_type}: ").strip()
 		if not verify_price(price):
 			print("Invalid price!")
 			return
-		price = round(float(price), 2)
+		price = round(float(price), 2) if price else 0.0
 				
 		self._temp_info = (*self._temp_info, singer_name, category, price)
 		return 1
 			
 	def search(self, name, singer_name, category, price):
-		pattern_song = Song(None, name, singer_name, category, price, None)
-		result = [song for song in self._data.values() if song == pattern_song]
+		pattern_song = Song(None, name, singer_name, category, price)
+		result = [stock for stock in self._data.values() if stock.song == pattern_song]
 		return result
 	
 	def add(self):
@@ -173,65 +167,62 @@ class SongManager(EntityManager):
 
 		result = self.search(name, singer_name, category, price)
 		if result:
-			result[0].no += n
+			result[0].n += n
 			return 1
 		
 		s = self._create_id()
-		new_song = Song(s, name, singer_name, category, price, n)
-		self._data[s] = new_song
+		new_song = Song(s, name, singer_name, category, price)
+		new_stock = SongStock(new_song, n)
+		self._data[s] = new_stock
 		return 1
 	
 	def update(self, i):
 		if not super().update(i): return
-		updated_song = self._data[i]
+		updated_stock = self._data[i]
 		name, singer_name, category, price = self._temp_info
 
-		if not name: name = updated_song.name
-		if not singer_name: singer_name = updated_song.singer_name
-		if not category: category = updated_song.category
-		if not price: price = updated_song.price
+		if not name: name = updated_stock.song.name
+		if not singer_name: singer_name = updated_stock.song.singer_name
+		if not category: category = updated_stock.song.category
+		if not price: price = updated_stock.song.price
 
 		result = self.search(name, singer_name, category, price)
-
 		if result:
-			print(result[0])
-			result[0].no += updated_song.no
-			self._queue.append((int(i[-6:]), int(result[0].id[-6:])))
+			result[0].n += updated_stock.n
 			del self._data[i]
 		else:
-			updated_song.name = name
-			updated_song.singer_name = singer_name
-			updated_song.category = category
-			updated_song.price = price
+			updated_stock.song.name = name
+			updated_stock.song.singer_name = singer_name
+			updated_stock.song.category = category
+			updated_stock.song.price = price
 		
 		return 1
+	
+	def show(self, L: list[tuple[Song, int]]):
+		print(f"There are {len(L)} {self.mng_type}s: ")
+		for stock in L: print(f"{str(stock.song)}{stock.n:10}")
+
 
 		
 		
 if __name__ == "__main__":
-	# sgmng = SingerManager()
-	# ctmng = CategoryManager()
-	# smng = SongManager(sgmng, ctmng)
-	# for i in range(4):
-	# 	smng.add()
+	smng = SongManager()
+	for i in range(4):
+		smng.add()
 	
-	# sgmng.show_all()
-	# ctmng.show_all()
-	# smng.show_all()
-
-	# smng.search()
-	# smng.delete('kgyeutskgjkrkhgrrgj2.12')
-	# sgmng.show_all()
-	# ctmng.show_all()
-	# smng.show_all()
-	umng = UserManager()
-	for i in range(5):
-		umng.add()
+	smng.show_all()
+	smng.update('song1')
+	smng.show_all()
+	smng.update('song0')
+	smng.show_all()
+	# umng = UserManager()
+	# for i in range(5):
+		# umng.add()
 
 	# umng.show(umng._data.values())
 	# umng.update('user000000')
-	umng.show_all()
-	umng.delete('user000001')
-	umng.show_all()
-	umng.add()
-	umng.show_all()
+	# umng.show_all()
+	# umng.delete('user000001')
+	# umng.show_all()
+	# umng.add()
+	# umng.show_all()
