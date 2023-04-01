@@ -53,10 +53,10 @@ class SaleManager:
 	
 	def refresh(self):
 		for data in self.__data:
-			if data[0] not in self.__user_ref._data.keys():
-				data[0] = None
-			if data[1] not in self.__song_ref._data.keys():
-				data[1] = None
+			if data.user_id not in self.__user_ref._data.keys():
+				data.user_id = "NAN"
+			if data.song_id not in self.__song_ref._data.keys():
+				data.song_id = "NAN"
 	
 	def show(self, L:list[Sale]):
 		print(f"There are {len(L)} sales:")
