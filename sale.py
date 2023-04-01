@@ -54,9 +54,9 @@ class SaleManager:
 	def refresh(self):
 		for data in self.__data:
 			if data.user_id not in self.__user_ref._data.keys():
-				data.user_id = "NAN"
+				data.user_id = ''
 			if data.song_id not in self.__song_ref._data.keys():
-				data.song_id = "NAN"
+				data.song_id = ''
 	
 	def show(self, L:list[Sale]):
 		print(f"There are {len(L)} sales:")
@@ -70,8 +70,14 @@ class SaleManager:
 		user_sale = defaultdict(list)
 		for sale in self.__data:
 			user_sale[sale.user_id].append(sale)
+		user_sale_1 = {}
+		# print(user_sale)
+		# print(len(user_sale))
+		print('Now loop')
 		for user_id, sales in user_sale.items():
-			user_sale[user_id] = sum(list(map(lambda sale: sale.times[1], sales)))
+			user_sale_1[user_id] = sum(list(map(lambda sale: sum(list(map(lambda sa: sa[1], sale.times))), sales)))
+			# print(sales[0].times)
+		return user_sale_1
 
 if __name__ == "__main__":
 	user_mng = UserManager()
@@ -92,3 +98,4 @@ if __name__ == "__main__":
 	sale_mng.show_all()
 	sale_mng.refresh()
 	sale_mng.show_all()
+	print(sale_mng.user_money())
