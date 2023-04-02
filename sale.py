@@ -1,9 +1,10 @@
 from entity_manager import *
 from entity import *
 from datetime import datetime
+from collections import defaultdict
 
 class Sale:
-	def __init__(self, user_id:User, song_id:Song, time, price):
+	def __init__(self, user_id, song_id, time, price):
 		self.__user = user_id
 		self.__song = song_id
 		self.__time = time
@@ -77,16 +78,35 @@ class SaleManager:
 	def show_all(self):
 		self.show(self.__data)
 
-	# calculate total spend from users
-	# def user_money(self):
-	# 	user_sale = defaultdict(list)
-	# 	for sale in self.__data:
-	# 		user_sale[sale.user_id].append(sale)
-	# 	user_sale_1 = {}
+	def group_user(self):
+		user_sale = defaultdict(list)
+		for sale in self.__data:
+			user_sale[sale.user_id].append(sale)
+		user_sale_1 = {}
 
-	# 	for user_id, sales in user_sale.items():
-	# 		user_sale_1[user_id] = sum(list(map(lambda sale: sum(list(map(lambda sa: sa[1], sale.times))), sales)))
-	# 	return user_sale_1
+		for user_id, sales in user_sale.items():
+			user_sale_1[user_id] = sum(list(map(lambda sale: sale.price, sales)))
+		return user_sale_1
+	
+	def group_song(self):
+		song_sale = defaultdict(list)
+		for sale in self.__data:
+			song_sale[sale.song_id].append(sale)
+		song_sale_1 = {}
+
+		for song_id, sales in song_sale.items():
+			song_sale_1[song_id] = sum(list(map(lambda sale: sale.price, sales)))
+		return song_sale_1
+	
+	def group_time(self):
+		time_sale = defaultdict(list)
+		for sale in self.__data:
+			time_sale[sale.time_id].append(sale)
+		time_sale_1 = {}
+
+		for time_id, sales in time_sale.items():
+			time_sale_1[time_id] = sum(list(map(lambda sale: sale.price, sales)))
+		return time_sale_1
 
 if __name__ == "__main__":
 	user_mng = UserManager()
@@ -106,5 +126,6 @@ if __name__ == "__main__":
 	
 	sale_mng.show_all()
 	song_mng.show_all()
-	sale_mng.show(sale_mng.search('', 'song0', '', ''))
+	print(sale_mng.group_user())
+	# sale_mng.show(sale_mng.search('', 'song0', '', ''))
 	
