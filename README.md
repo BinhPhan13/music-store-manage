@@ -2,11 +2,11 @@ USTH ICT 2023 Advanced Programming with Python
 =====================================================
 
 Group 3 - DS: 
-    + Phan Thanh Bình BI12 - 059
-    + Trần Thế Trung BI12 - 452
-    + Trần Minh Trung BA11 - 093
-    + Châu Phan Phương Mai BI12 - 263
-    + Vũ Quỳnh Anh BI12 - 019
+- Phan Thanh Bình BI12 - 059
+- Trần Thế Trung BI12 - 452
+- Trần Minh Trung BA11 - 093
+- Châu Phan Phương Mai BI12 - 263
+- Vũ Quỳnh Anh BI12 - 019
 
 TOPIC 48: Music Store Management System
 =====================================================
